@@ -29,16 +29,16 @@ public class Asteroid extends Entity{
     }
 
     public static void incrementSpeed() {
-        setSpeed(getSpeed() + getSpeedDelta());
+        setSpeed(speed + SPEED_DELTA);
     }
 
     public static void setSpeed(double speed) {
         Asteroid.speed = speed;
     }
-
-    public static double getSpeedDelta() {
-        return SPEED_DELTA;
-    }
+//
+//    public static double getSpeedDelta() {
+//        return SPEED_DELTA;
+//    }
 
     @Override
     public void initBasePolygon() {
@@ -69,8 +69,8 @@ public class Asteroid extends Entity{
         deltaAngle = Math.random() * 2 * getMaxRockSpin() - getMaxRockSpin();
         x = newX;
         y = newY;
-        deltaX = Math.random() * 2 * getSpeed() - getSpeed();
-        deltaY = Math.random() * 2 * getSpeed() - getSpeed();
+        deltaX = Math.random() * 2 * speed - speed;
+        deltaY = Math.random() * 2 * speed - speed;
         transform();
         setIsSmall(true);
     }
@@ -101,10 +101,10 @@ public class Asteroid extends Entity{
 
         // Set a random motion for the asteroid.
 
-        deltaX = Math.random() * getSpeed();
+        deltaX = Math.random() * speed;
         if (Math.random() < 0.5)
             deltaX = -deltaX;
-        deltaY = Math.random() * getSpeed();
+        deltaY = Math.random() * speed;
         if (Math.random() < 0.5)
             deltaY = -deltaY;
 

@@ -9,37 +9,37 @@ public class AsteroidsGameStateHandler implements AsteroidsGameStateProvider {
     /**
      * Milliseconds between screen and the resulting frame rate.
      */
-    static final int DELAY = 20;
+    private static final int DELAY = 20;
 
-    static final int FPS   = Math.round(1000 / DELAY);
+    private static final int FPS   = Math.round(1000 / DELAY);
 
-    static final int MAX_NUMBER_OF_PHOTONS =  8;
-    static final int MAX_NUMBER_OF_ASTEROIDS =  8;
-    static final int MAX_AMOUNT_OF_SCRAP = 40;
-    static final int SCRAP_COUNT  = 2 * FPS;
-    static final int HYPER_COUNT  = 3 * FPS;  // calculated using number of
-    static final int MISSILE_COUNT = 4 * FPS;  // seconds x frames per second.
-    static final int STORM_PAUSE  = 3 * FPS; // Time between rounds
+    private static final int MAX_NUMBER_OF_PHOTONS =  8;
+    private static final int MAX_NUMBER_OF_ASTEROIDS =  8;
+    private static final int MAX_AMOUNT_OF_SCRAP = 40;
+    private static final int SCRAP_COUNT  = 2 * FPS;
+    private static final int HYPER_COUNT  = 3 * FPS;  // calculated using number of
+    private static final int MISSILE_COUNT = 4 * FPS;  // seconds x frames per second.
+    private static final int STORM_PAUSE  = 3 * FPS; // Time between rounds
 
-    static final int    MIN_ROCK_SIDES =   6; // Ranges for asteroid shape, size
-    static final int    MAX_ROCK_SIDES =  16; // speed and rotation.
-    static final int    MIN_ROCK_SIZE  =  20;
-    static final int    MAX_ROCK_SIZE  =  40;
-    static final double MIN_ROCK_SPEED =  40.0 / FPS;
-    static final double MAX_ROCK_SPEED = 240.0 / FPS;
-    static final double MAX_ROCK_SPIN  = Math.PI / FPS;
+    private static final int    MIN_ROCK_SIDES =   6; // Ranges for asteroid shape, size
+    private static final int    MAX_ROCK_SIDES =  16; // speed and rotation.
+    private static final int    MIN_ROCK_SIZE  =  20;
+    private static final int    MAX_ROCK_SIZE  =  40;
+    private static final double MIN_ROCK_SPEED =  40.0 / FPS;
+    private static final double MAX_ROCK_SPEED = 240.0 / FPS;
+    private static final double MAX_ROCK_SPIN  = Math.PI / FPS;
 
-    static final int MAX_SHIPS = 3;     // Starting number of ships for
-    static final int UFO_PASSES = 3;    // Number of passes for flying
-    static final double SHIP_ANGLE_STEP = Math.PI / FPS;
-    static final double SHIP_SPEED_STEP = 15.0 / FPS;
-    static final double MAX_SHIP_SPEED  = 1.25 * MAX_ROCK_SPEED;
-    static final int MAX_SHIP_COUNTER_DURATION = 2 * FPS;
-    static private final double missile_PROBABILITY = 0.45 / FPS;
-    static private final int BIG_POINTS    =  25;
-    static private final int SMALL_POINTS  =  50;
-    static final int UFO_POINTS    = 250;
-    static final int MISSILE_POINTS = 500;
+    private static final int MAX_SHIPS = 3;     // Starting number of ships for
+    private static final int UFO_PASSES = 3;    // Number of passes for flying
+    private static final double SHIP_ANGLE_STEP = Math.PI / FPS;
+    private static final double SHIP_SPEED_STEP = 15.0 / FPS;
+    private static final double MAX_SHIP_SPEED  = 1.25 * MAX_ROCK_SPEED;
+    private static final int MAX_SHIP_COUNTER_DURATION = 2 * FPS;
+    private static final double missile_PROBABILITY = 0.45 / FPS;
+    private static final int BIG_POINTS    =  25;
+    private static final int SMALL_POINTS  =  50;
+    private static final int UFO_POINTS    = 250;
+    private static final int MISSILE_POINTS = 500;
 
     // Number of points the must be scored to earn a new ship or to cause the
     // flying saucer to appear.
@@ -68,6 +68,8 @@ public class AsteroidsGameStateHandler implements AsteroidsGameStateProvider {
     private boolean warping;
     private boolean missilePresent;
     private boolean detailedExplosions = true;
+
+    private boolean playing = false;
 
     /**
      * Resets the state of the game.
@@ -151,7 +153,7 @@ public class AsteroidsGameStateHandler implements AsteroidsGameStateProvider {
      * Fires a new photon from the ship.
      */
     public void firePhoton() {
-        if (!ship.isActive()) return;
+        if (!(ship.isActive() && playing)) return;
 
 //        photonTime = System.currentTimeMillis();
         photonIndex++;
@@ -170,7 +172,7 @@ public class AsteroidsGameStateHandler implements AsteroidsGameStateProvider {
      * Causes ship to enter hyper space.
      */
     public void warpShip() {
-        if (!ship.isActive() || ship.getHyperCounter() > 0) return;
+        if (!ship.isActive() || ship.getHyperCounter() > 0 || !playing) return;
 
         ship.setX(Math.random() * Entity.getWidth());
         ship.setY(Math.random() * Entity.getHeight());
@@ -303,7 +305,7 @@ public class AsteroidsGameStateHandler implements AsteroidsGameStateProvider {
                     }
 
                 // If the ship is not in hyperspace, see if it is hit.
-                if (ship.isActive() && ship.getHyperCounter() <= 0 &&
+                if (playing && ship.isActive() && ship.getHyperCounter() <= 0 &&
                         asteroids[i].isActive() && asteroids[i].isColliding(ship)) {
 
                     handleShipCollision();
@@ -512,11 +514,12 @@ public class AsteroidsGameStateHandler implements AsteroidsGameStateProvider {
     }
 
     /**
-     * Stops the ufo and missile.
+     * Stops the game.
      */
     public void stop() {
         ufo.stop();
         missile.stop();
+        playing = false;
     }
 
     @Override
@@ -612,5 +615,9 @@ public class AsteroidsGameStateHandler implements AsteroidsGameStateProvider {
 
     public void setDetailedExplosions(boolean detailedExplosions) {
         this.detailedExplosions = detailedExplosions;
+    }
+
+    public void setPlaying(boolean playing) {
+        this.playing = playing;
     }
 }

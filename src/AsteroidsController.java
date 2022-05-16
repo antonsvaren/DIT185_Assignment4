@@ -57,42 +57,42 @@ import java.applet.AudioClip;
 public class AsteroidsController extends Applet implements Runnable, KeyListener {
   private static final int DELAY = 20;
   // Copyright information.
-  String copyName = "controller.Asteroids";
-  String copyVers = "Version 1.3";
-  String copyInfo = "Copyright 1998-2001 by Mike Hall";
-  String copyLink = "http://www.brainjar.com";
-  String copyText = copyName + '\n' + copyVers + '\n'
+  private final String copyName = "controller.Asteroids";
+  private final String copyVers = "Version 1.3";
+  private final String copyInfo = "Copyright 1998-2001 by Mike Hall";
+  private final String copyLink = "http://www.brainjar.com";
+  private final String copyText = copyName + '\n' + copyVers + '\n'
                   + copyInfo + '\n' + copyLink;
 
-  Thread loadThread;
-  Thread loopThread;
+  private Thread loadThread;
+  private Thread loopThread;
 
-  boolean loaded = false;
-  boolean paused;
-  boolean playing;
-  boolean sound;
-  boolean detail;
+  private boolean loaded = false;
+  private boolean paused = false;
+  private boolean playing = false;
+  private boolean sound;
+  private boolean detail;
 
-  boolean up;
+  private boolean up;
 
-  boolean left  = false;
-  boolean right = false;
-  boolean down  = false;
+  private boolean left  = false;
+  private boolean right = false;
+  private boolean down  = false;
 
   // Counter and total used to track the loading of the sound clips.
-  int clipTotal   = 0;
-  int clipsLoaded = 0;
+  private int clipTotal   = 0;
+  private int clipsLoaded = 0;
 
   // Off screen image.
-  Dimension offDimension;
-  Image     offImage;
-  Graphics  offGraphics;
+  private Dimension offDimension;
+  private Image offImage;
+  private Graphics offGraphics;
 
   // Data for the screen font.
-  Font font = new Font("Helvetica", Font.BOLD, 12);
-  FontMetrics fm = getFontMetrics(font);
-  int fontWidth = fm.getMaxAdvance();
-  int fontHeight = fm.getHeight();
+  private final Font font = new Font("Helvetica", Font.BOLD, 12);
+  private final FontMetrics fm = getFontMetrics(font);
+  private final int fontWidth = fm.getMaxAdvance();
+  private final int fontHeight = fm.getHeight();
 
   private AsteroidsGameStateHandler asteroidsGameStateHandler;
   private AsteroidsView asteroidsView;
@@ -119,13 +119,6 @@ public class AsteroidsController extends Applet implements Runnable, KeyListener
 
     addKeyListener(this);
 
-    // TODO: to view
-    // Generate the starry background.
-//    numStars = Entity.getWidth() * Entity.getHeight() / 5000;
-//    stars = new Point[numStars];
-//    for (int i = 0; i < numStars; i++)
-//      stars[i] = new Point((int) (Math.random() * Entity.getWidth()), (int) (Math.random() * Entity.getHeight()));
-
     sound = true;
     detail = true;
 
@@ -140,7 +133,7 @@ public class AsteroidsController extends Applet implements Runnable, KeyListener
 
   public void initGame() {
     asteroidsGameStateHandler.init();
-
+    asteroidsGameStateHandler.setPlaying(true);
     playing = true;
     paused = false;
   }
@@ -203,12 +196,18 @@ public class AsteroidsController extends Applet implements Runnable, KeyListener
           endGame();
       }
 
-      if (!paused) {
+      if (playing) {
         asteroidsGameStateHandler.moveShip(left, right, up, down);
+      }
+
+      if (!paused) {
         asteroidsGameStateHandler.update();
       }
 
-      asteroidsView.playSounds();
+      if (playing) {
+        asteroidsView.playSounds();
+      }
+
       repaint();
 
       asteroidsGameStateHandler.resetFlags();
@@ -223,8 +222,6 @@ public class AsteroidsController extends Applet implements Runnable, KeyListener
   }
 
   public void initView() {
-
-
     AudioClip crashSound;
     AudioClip explosionSound;
     AudioClip fireSound;
@@ -298,21 +295,21 @@ public class AsteroidsController extends Applet implements Runnable, KeyListener
   public void keyPressed(KeyEvent e) {
 
     char c;
-    if (e.getKeyCode() == KeyEvent.VK_LEFT)
+    if (playing && e.getKeyCode() == KeyEvent.VK_LEFT)
       left = true;
-    if (e.getKeyCode() == KeyEvent.VK_RIGHT)
+    if (playing && e.getKeyCode() == KeyEvent.VK_RIGHT)
       right = true;
-    if (e.getKeyCode() == KeyEvent.VK_UP) {
+    if (playing && e.getKeyCode() == KeyEvent.VK_UP) {
       up = true;
       asteroidsView.setUp(true);
     }
-    if (e.getKeyCode() == KeyEvent.VK_DOWN) {
+    if (playing && e.getKeyCode() == KeyEvent.VK_DOWN) {
       down = true;
       asteroidsView.setDown(true);
     }
 
     // Spacebar: fire a photon and start its counter.
-    if (e.getKeyChar() == ' ') {
+    if (playing && e.getKeyChar() == ' ') {
         asteroidsGameStateHandler.firePhoton();
     }
 
@@ -321,14 +318,14 @@ public class AsteroidsController extends Applet implements Runnable, KeyListener
 
     // 'H' key: warp ship into hyperspace by moving to a random location and
     // starting counter.
-    if (c == 'h' ) {
+    if (playing && c == 'h' ) {
       asteroidsGameStateHandler.warpShip();
     }
 
     // 'P' key: toggle pause mode and start or stop any active looping sound
     // clips.
 
-    if (c == 'p') {
+    if (playing && c == 'p') {
       if (paused) {
         asteroidsView.unPause();
       }
