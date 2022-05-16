@@ -4,74 +4,62 @@ import model.entity.*;
 
 import java.awt.*;
 
-public class AsteroidsGameStateHandler {
+public class AsteroidsGameStateHandler implements AsteroidsGameStateProvider {
 
-    static int fps = 60;
+    /**
+     * Milliseconds between screen and the resulting frame rate.
+     */
+    static final int DELAY = 20;
 
-    static final int MAX_NUMBER_OF_SHOTS =  8;          // Maximum number of sprites
-    static final int MAX_ROCKS =  8;          // for photons, asteroids and
-    static final int MAX_SCRAP = 40;          // explosions.
+    static final int FPS   = Math.round(1000 / DELAY);
 
-    static final int SCRAP_COUNT  = 2 * fps;  // Timer counter starting values
-    static final int HYPER_COUNT  = 3 * fps;  // calculated using number of
-    static final int MISSILE_COUNT = 4 * fps;  // seconds x frames per second.
-    static final int STORM_PAUSE  = 3 * fps; // Time between rounds
+    static final int MAX_NUMBER_OF_PHOTONS =  8;
+    static final int MAX_NUMBER_OF_ASTEROIDS =  8;
+    static final int MAX_AMOUNT_OF_SCRAP = 40;
+    static final int SCRAP_COUNT  = 2 * FPS;
+    static final int HYPER_COUNT  = 3 * FPS;  // calculated using number of
+    static final int MISSILE_COUNT = 4 * FPS;  // seconds x frames per second.
+    static final int STORM_PAUSE  = 3 * FPS; // Time between rounds
 
     static final int    MIN_ROCK_SIDES =   6; // Ranges for asteroid shape, size
     static final int    MAX_ROCK_SIDES =  16; // speed and rotation.
     static final int    MIN_ROCK_SIZE  =  20;
     static final int    MAX_ROCK_SIZE  =  40;
-    static final double MIN_ROCK_SPEED =  40.0 / fps;
-    static final double MAX_ROCK_SPEED = 240.0 / fps;
-    static final double MAX_ROCK_SPIN  = Math.PI / fps;
+    static final double MIN_ROCK_SPEED =  40.0 / FPS;
+    static final double MAX_ROCK_SPEED = 240.0 / FPS;
+    static final double MAX_ROCK_SPIN  = Math.PI / FPS;
 
-    static final int MAX_SHIPS = 3;           // Starting number of ships for
-    // each game.
-    static final int UFO_PASSES = 3;          // Number of passes for flying
-    // saucer per appearance.
-
-    // Ship's rotation and acceleration rates and maximum speed.
-
-    static final double SHIP_ANGLE_STEP = Math.PI / fps;
-    static final double SHIP_SPEED_STEP = 15.0 / fps;
+    static final int MAX_SHIPS = 3;     // Starting number of ships for
+    static final int UFO_PASSES = 3;    // Number of passes for flying
+    static final double SHIP_ANGLE_STEP = Math.PI / FPS;
+    static final double SHIP_SPEED_STEP = 15.0 / FPS;
     static final double MAX_SHIP_SPEED  = 1.25 * MAX_ROCK_SPEED;
-
-    static final int MAX_SHIP_COUNTER_DURATION = 2 * fps;
-
-    static final int FIRE_DELAY = 50;         // Minimum number of milliseconds
-    // required between photon shots.
-
-    // Probablility of flying saucer firing a missile during any given frame
-    // (other conditions must be met).
-
-    static final double missile_PROBABILITY = 0.45 / fps;
-
-    static final int BIG_POINTS    =  25;     // Points scored for shooting
-    static final int SMALL_POINTS  =  50;     // various objects.
+    static final int MAX_SHIP_COUNTER_DURATION = 2 * FPS;
+    static private final double missile_PROBABILITY = 0.45 / FPS;
+    static private final int BIG_POINTS    =  25;
+    static private final int SMALL_POINTS  =  50;
     static final int UFO_POINTS    = 250;
     static final int MISSILE_POINTS = 500;
 
     // Number of points the must be scored to earn a new ship or to cause the
     // flying saucer to appear.
+    static private final int NEW_SHIP_POINTS = 5000;
+    static private final int NEW_UFO_POINTS  = 2750;
 
-    static final int NEW_SHIP_POINTS = 5000;
-    static final int NEW_UFO_POINTS  = 2750;
-
-    Ship ship;
-    Ufo ufo;
-    Missile missile;
-    Photon[] photons = new Photon[MAX_NUMBER_OF_SHOTS];
-    Asteroid[] asteroids = new Asteroid[MAX_ROCKS];
-    Explosion[] explosions = new Explosion[MAX_SCRAP];
+    private Ship ship;
+    private Ufo ufo;
+    private Missile missile;
+    private final Photon[] photons = new Photon[MAX_NUMBER_OF_PHOTONS];
+    private final Asteroid[] asteroids = new Asteroid[MAX_NUMBER_OF_ASTEROIDS];
+    private final Explosion[] explosions = new Explosion[MAX_AMOUNT_OF_SCRAP];
     private int highScore;
     private int score;
     private int newShipScore;
     private int newUfoScore;
     private int photonIndex;
-    private long photonTime;     // Time value used to keep firing rate constant.
-    private int breakDuration;                            // Break-time counter.
-    private int asteroidsLeft;                               // Number of active asteroids.
-    private int explosionIndex;                         // Next available explosion sprite.
+    private int breakDuration;  // Break-time counter.
+    private int asteroidsLeft;  // Number of active asteroids.
+    private int explosionIndex; // Next available explosion sprite.
     private boolean gameOver;
     private boolean thrustersOn;
     private boolean newExplosion;
@@ -79,7 +67,11 @@ public class AsteroidsGameStateHandler {
     private boolean collision;
     private boolean warping;
     private boolean missilePresent;
+    private boolean detailedExplosions = true;
 
+    /**
+     * Resets the state of the game.
+     */
     public void init() {
         FwdThruster fwdThruster = new FwdThruster();
         RevThruster revThruster = new RevThruster();
@@ -94,7 +86,7 @@ public class AsteroidsGameStateHandler {
                 fwdThruster,
                 revThruster);
 
-        for (int i = 0; i < MAX_NUMBER_OF_SHOTS; i++) {
+        for (int i = 0; i < MAX_NUMBER_OF_PHOTONS; i++) {
             photons[i] = new Photon();
         }
 
@@ -107,7 +99,7 @@ public class AsteroidsGameStateHandler {
         missile.initBasePolygon();
 
         // Create asteroid sprites.
-        for (int i = 0; i < MAX_ROCKS; i++)
+        for (int i = 0; i < MAX_NUMBER_OF_ASTEROIDS; i++)
             asteroids[i] = new Asteroid(
                     MIN_ROCK_SIDES,
                     MAX_ROCK_SIDES,
@@ -119,7 +111,7 @@ public class AsteroidsGameStateHandler {
         Asteroid.setSpeed(MIN_ROCK_SPEED);
 
         // Create explosion sprites.
-        for (int i = 0; i < MAX_SCRAP; i++)
+        for (int i = 0; i < MAX_AMOUNT_OF_SCRAP; i++)
             explosions[i] = new Explosion();
 
         // Initialize game data and put us in 'game over' mode.
@@ -134,33 +126,19 @@ public class AsteroidsGameStateHandler {
         ufo.stop();
         missile.stop();
         initAsteroids();
-        initExplosions();
-        photonTime = System.currentTimeMillis();
 
         gameOver = false;
 
         highScore = 0;
     }
 
-//    public void initGame() {
-//
-//        // Initialize game data and sprites.
-//        score = 0;
-//        newShipScore = NEW_SHIP_POINTS;
-//        newUfoScore = NEW_UFO_POINTS;
-//        ship.resetShipsLeft();
-//
-//        initShip();
-//        initPhotons();
-//        ufo.stop();
-//        missile.stop();
-//        initAsteroids();
-//        initExplosions();
-//        photonTime = System.currentTimeMillis();
-//
-//        gameOver = false;
-//    }
-
+    /**
+     * Updates the ship with user input.
+     * @param left Indicates if the user has pressed left.
+     * @param right Indicates if the user has pressed right.
+     * @param up Indicates if the user has pressed up.
+     * @param down Indicates if the user has pressed down.
+     */
     public void moveShip(boolean left, boolean right, boolean up, boolean down) {
         if (!ship.isActive()) return;
 
@@ -169,12 +147,15 @@ public class AsteroidsGameStateHandler {
         ship.updateShip(left, right, up, down);
     }
 
+    /**
+     * Fires a new photon from the ship.
+     */
     public void firePhoton() {
         if (!ship.isActive()) return;
 
-        photonTime = System.currentTimeMillis();
+//        photonTime = System.currentTimeMillis();
         photonIndex++;
-        if (photonIndex >= MAX_NUMBER_OF_SHOTS)
+        if (photonIndex >= MAX_NUMBER_OF_PHOTONS)
             photonIndex = 0;
         photons[photonIndex].setActive(true);
         photons[photonIndex].setX(ship.getX());
@@ -185,6 +166,9 @@ public class AsteroidsGameStateHandler {
         firing = true;
     }
 
+    /**
+     * Causes ship to enter hyper space.
+     */
     public void warpShip() {
         if (!ship.isActive() || ship.getHyperCounter() > 0) return;
 
@@ -195,38 +179,46 @@ public class AsteroidsGameStateHandler {
         warping = true;
     }
 
+    /**
+     * Reset the ship at the center of the screen.
+     */
     public void initShip() {
-        // Reset the ship at the center of the screen.
         ship.init();
         ship.setHyperCounter(0);
     }
 
+    /**
+     * Resets the photons,
+     */
     public void initPhotons() {
-        for (int i = 0; i < MAX_NUMBER_OF_SHOTS; i++)
+        for (int i = 0; i < MAX_NUMBER_OF_PHOTONS; i++)
             photons[i].setActive(false);
         photonIndex = 0;
     }
 
+    /**
+     * Resets asteroids.
+     */
     public void initAsteroids() {
-        // Create random shapes, positions and movements for each asteroid.
-
-        for (int i = 0; i < MAX_ROCKS; i++) {
+        for (int i = 0; i < MAX_NUMBER_OF_ASTEROIDS; i++) {
             asteroids[i].init();
         }
 
         breakDuration = STORM_PAUSE;
-        asteroidsLeft = MAX_ROCKS;
+        asteroidsLeft = MAX_NUMBER_OF_ASTEROIDS;
         double asteroidsSpeed = Asteroid.getSpeed();
         if (asteroidsSpeed < MAX_ROCK_SPEED)
             Asteroid.incrementSpeed();
     }
 
+    /**
+     * Create one or two smaller asteroids from a larger one using inactive
+     * asteroids. The new asteroids will be placed in the same position as the
+     * old one but will have a new, smaller shape and new, randomly generated
+     * movements.
+     * @param n The index of the asteroid that will be turned into smaller asteroids.
+     */
     public void initSmallAsteroids(int n) {
-        // Create one or two smaller asteroids from a larger one using inactive
-        // asteroids. The new asteroids will be placed in the same position as the
-        // old one but will have a new, smaller shape and new, randomly generated
-        // movements.
-
         int count = 0;
         int i = 0;
         double prevX = asteroids[n].getX();
@@ -238,22 +230,17 @@ public class AsteroidsGameStateHandler {
                 asteroidsLeft++;
             }
             i++;
-        } while (i < MAX_ROCKS && count < 2);
+        } while (i < MAX_NUMBER_OF_ASTEROIDS && count < 2);
     }
 
-    public void initExplosions() {
-        for (int i = 0; i < MAX_SCRAP; i++) {
-            explosions[i].init();
-        }
-        explosionIndex = 0;
-    }
-
+    /**
+     * Move and process all entities.
+     */
     public void update() {
-        // Move and process all sprites.
         updateShip();
         updatePhotons();
         updateUfo();
-        updatemissile();
+        updateMissile();
         updateAsteroids();
         updateExplosions();
 
@@ -263,6 +250,9 @@ public class AsteroidsGameStateHandler {
                 initAsteroids();
     }
 
+    /**
+     * Reset flags describing the current state of the game.
+     */
     public void resetFlags() {
         thrustersOn = false;
         newExplosion = false;
@@ -271,11 +261,12 @@ public class AsteroidsGameStateHandler {
         warping = false;
     }
 
+    /**
+     * Move any active explosion debris. Stop explosion when its counter has
+     * expired.
+     */
     public void updateExplosions() {
-        // Move any active explosion debris. Stop explosion when its counter has
-        // expired.
-
-        for (int i = 0; i < MAX_SCRAP; i++)
+        for (int i = 0; i < MAX_AMOUNT_OF_SCRAP; i++)
             if (explosions[i].isActive()) {
                 explosions[i].transform();
                 if (explosions[i].getCounter() - 1 < 0)
@@ -285,16 +276,18 @@ public class AsteroidsGameStateHandler {
             }
     }
 
+    /**
+     * Move any active asteroids and check for collisions.
+     */
     public void updateAsteroids() {
-        // Move any active asteroids and check for collisions.
-        for (int i = 0; i < MAX_ROCKS; i++)
+        for (int i = 0; i < MAX_NUMBER_OF_ASTEROIDS; i++)
             if (asteroids[i].isActive()) {
                 asteroids[i].transform();
 
                 // If hit by photon, kill asteroid and advance score. If asteroid is
                 // large, make some smaller ones to replace it.
 
-                for (int j = 0; j < MAX_NUMBER_OF_SHOTS; j++)
+                for (int j = 0; j < MAX_NUMBER_OF_PHOTONS; j++)
                     if (photons[j].isActive() && asteroids[i].isActive() && asteroids[i].isColliding(photons[j])) {
                         asteroidsLeft--;
                         asteroids[i].setActive(false);
@@ -318,19 +311,20 @@ public class AsteroidsGameStateHandler {
             }
     }
 
-    public void updatemissile() {
-        // Move the guided missile and check for collision with ship or photon. Stop
-        // it when its counter has expired.
-
+    /**
+     * Move the guided missile and check for collision with ship or photon. Stop
+     * it when its counter has expired.
+     */
+    public void updateMissile() {
         if (missile.isActive()) {
             if (missile.decrementCounter() <= 0) {
                 missilePresent = false;
                 missile.stop();
             }
             else {
-                guidemissile();
+                guideMissile();
                 missile.transform();
-                for (int i = 0; i < MAX_NUMBER_OF_SHOTS; i++)
+                for (int i = 0; i < MAX_NUMBER_OF_PHOTONS; i++)
                     if (photons[i].isActive() && missile.isColliding(photons[i])) {
                         explode(missile);
                         missile.stop();
@@ -338,6 +332,7 @@ public class AsteroidsGameStateHandler {
                     }
                 if (missile.isActive() && ship.isActive() &&
                         ship.getHyperCounter() <= 0 && ship.isColliding(missile)) {
+                    missile.stop();
                     handleShipCollision();
                 }
             }
@@ -351,23 +346,18 @@ public class AsteroidsGameStateHandler {
         ufo.stop();
     }
 
-    public void guidemissile() {
+    /**
+     * Find the angle needed to hit the ship.
+     */
+    public void guideMissile() {
         if (!ship.isActive() || ship.getHyperCounter() > 0)
             return;
-
-        // Find the angle needed to hit the ship.
 
         double angle;
         double dx = ship.getX() - missile.getX();
         double dy = ship.getY() - missile.getY();
         if (dx == 0 && dy == 0)
-            angle = 0;
-        if (dx == 0) {
-            if (dy < 0)
-                angle = -Math.PI / 2;
-            else
-                angle = Math.PI / 2;
-        }
+            angle = Math.PI / 2;
         else {
             angle = Math.atan(Math.abs(dy / dx));
             if (dy > 0)
@@ -386,9 +376,11 @@ public class AsteroidsGameStateHandler {
         missile.setDeltaY(0.75 * MAX_ROCK_SPEED * Math.cos(missile.getAngle()));
     }
 
+    /**
+     * Move the flying saucer and check for collision with a photon. Stop it
+     * when its counter has expired.
+     */
     public void updateUfo() {
-        // Move the flying saucer and check for collision with a photon. Stop it
-        // when its counter has expired.
         if (ufo.isActive()) {
             if (ufo.decrementCounter() <= 0) {
                 if (ufo.decrementPasses() > 0)
@@ -399,7 +391,7 @@ public class AsteroidsGameStateHandler {
             if (ufo.isActive()) {
                 ufo.transform();
 
-                for (int i = 0; i < MAX_NUMBER_OF_SHOTS; i++) {
+                for (int i = 0; i < MAX_NUMBER_OF_PHOTONS; i++) {
                     if (photons[i].isActive() && ufo.isColliding(photons[i])) {
                         explode(ufo);
                         ufo.stop();
@@ -408,12 +400,12 @@ public class AsteroidsGameStateHandler {
                     }
                 }
 
-                // On occassion, fire a missile at the ship if the saucer is not too
+                // On occasion, fire a missile at the ship if the saucer is not too
                 // close to it.
                 int d = (int) Math.max(Math.abs(ufo.getX() - ship.getX()), Math.abs(ufo.getY() - ship.getY()));
                 if (ship.isActive() && ship.getHyperCounter() <= 0 &&
                         ufo.isActive() && !missile.isActive() &&
-                        d > MAX_ROCK_SPEED * fps / 2 &&
+                        d > MAX_ROCK_SPEED * FPS / 2 &&
                         Math.random() < missile_PROBABILITY)
                     initMissile();
 
@@ -421,19 +413,20 @@ public class AsteroidsGameStateHandler {
         }
     }
 
+    /**
+     * Resets the missile.
+     */
     public void initMissile() {
         missile.init(ufo.getX(), ufo.getY());
         missile.setMissileCounter(MISSILE_COUNT);
         missilePresent = true;
     }
 
+    /**
+     * Move any active photons. Stop it when its counter has expired.
+     */
     public void updatePhotons() {
-
-        int i;
-
-        // Move any active photons. Stop it when its counter has expired.
-
-        for (i = 0; i < MAX_NUMBER_OF_SHOTS; i++)
+        for (int i = 0; i < MAX_NUMBER_OF_PHOTONS; i++)
             if (photons[i].isActive()) {
                 boolean wrapped = photons[i].transform();
                 if (wrapped) {
@@ -442,6 +435,9 @@ public class AsteroidsGameStateHandler {
             }
     }
 
+    /**
+     * Updates ship based on its current state.
+     */
     public void updateShip() {
         ship.transform();
         if (!ship.isActive()) {
@@ -475,18 +471,22 @@ public class AsteroidsGameStateHandler {
         }
     }
 
+    /**
+     * Create sprites for explosion animation. Each individual line segment
+     * of the given sprite is used to create a new sprite that will move
+     * outward  from the sprite's original position with a random rotation.
+     * @param s The entity that will be exploded.
+     */
     public void explode(Entity s) {
-        // Create sprites for explosion animation. Each individual line segment
-        // of the given sprite is used to create a new sprite that will move
-        // outward  from the sprite's original position with a random rotation.
+
 
         s.transform();
         int c = 2;
-        if (s.getTransformedPolygon().npoints < 6)
+        if (detailedExplosions || s.getTransformedPolygon().npoints < 6)
             c = 1;
         for (int i = 0; i < s.getTransformedPolygon().npoints; i += c) {
             explosionIndex++;
-            if (explosionIndex >= MAX_SCRAP)
+            if (explosionIndex >= MAX_AMOUNT_OF_SCRAP)
                 explosionIndex = 0;
             explosions[explosionIndex].setActive(true);
             explosions[explosionIndex].setBasePolygon(new Polygon());
@@ -511,83 +511,106 @@ public class AsteroidsGameStateHandler {
         }
     }
 
-    public boolean isGameOver() {
-        return gameOver;
-    }
-
-    public void setGameOver(boolean gameOver) {
-        this.gameOver = gameOver;
-    }
-
+    /**
+     * Stops the ufo and missile.
+     */
     public void stop() {
         ufo.stop();
         missile.stop();
     }
 
+    @Override
+    public boolean isGameOver() {
+        return gameOver;
+    }
+
+
+    @Override
     public boolean isThrustersOn() {
         return thrustersOn;
     }
 
+    @Override
     public Photon[] getPhotons() {
         return  photons;
     }
 
-    public Missile getMisile() {
+    @Override
+    public Missile getMissile() {
         return missile;
     }
 
+    @Override
     public Asteroid[] getAsteroids() {
         return asteroids;
     }
 
+    @Override
     public Ufo getUfo() {
         return ufo;
     }
 
+    @Override
     public Ship getShip() {
         return ship;
     }
 
+    @Override
     public int getHyperCount() {
         return HYPER_COUNT;
     }
 
+    @Override
     public int getMaxScrap() {
-        return MAX_SCRAP;
+        return MAX_AMOUNT_OF_SCRAP;
     }
 
+    @Override
     public Explosion[] getExplosions() {
         return explosions;
     }
 
+    @Override
     public int getScrapCount() {
         return SCRAP_COUNT;
     }
+    @Override
     public int getScore() {
         return score;
     }
+    @Override
     public int getHighScore() {
         return highScore;
     }
+    @Override
     public boolean isNewExplosion() {
         return newExplosion;
     }
+    @Override
     public boolean isFiring() {
         return firing;
     }
+    @Override
     public boolean isCollision() {
         return collision;
     }
 
+    @Override
     public boolean isWarping() {
         return warping;
     }
 
+    @Override
     public boolean isUfoPresent() {
         return ufo.isActive();
     }
 
+    @Override
     public boolean isMissilePresent() {
         return missilePresent;
+    }
+
+    public void setDetailedExplosions(boolean detailedExplosions) {
+        this.detailedExplosions = detailedExplosions;
     }
 }

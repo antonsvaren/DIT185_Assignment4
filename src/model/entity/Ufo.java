@@ -1,10 +1,21 @@
 package model.entity;
 
 public class Ufo extends Entity {
-    private int ufoPassesLeft;    // Counter for number of flying saucer passes.
-    private int ufoCounter;       // Timer counter used to track each flying saucer pass.
 
-    private double speedConstant;
+    /**
+     * Counter for number of flying saucer passes.
+     */
+    private int ufoPassesLeft;
+    /**
+     * Timer counter used to track each flying saucer pass.
+     */
+    private int ufoCounter;
+
+    /**
+     * Constant affecting the speed of the ufo. Will be multiplied
+     * with a random value to get the true speed of the ship.
+     */
+    private final double speedConstant;
 
     public Ufo(int ufoPassesLeft, int ufoCounter, double speedConstant) {
         super();
@@ -27,6 +38,9 @@ public class Ufo extends Entity {
         basePolygon.addPoint(-10, 5);
     }
 
+    /**
+     * Resets the ufo.
+     */
     public void init() {
 
         double angle, speed;
@@ -47,37 +61,23 @@ public class Ufo extends Entity {
         ufoCounter = (int) Math.abs(width / deltaX);
     }
 
-    public int getUfoPassesLeft() {
-        return ufoPassesLeft;
-    }
-
     public void setUfoPassesLeft(int ufoPassesLeft) {
         this.ufoPassesLeft = ufoPassesLeft;
     }
 
-    public int getUfoCounter() {
-        return ufoCounter;
-    }
-
-    public void setUfoCounter(int ufoCounter) {
-        this.ufoCounter = ufoCounter;
-    }
-
-
-    public double getSpeedConstant() {
-        return speedConstant;
-    }
-
-    public void setSpeedConstant(double speedConstant) {
-        this.speedConstant = speedConstant;
-    }
-
+    /**
+     * Makes ufo inactive.
+     */
     public void stop() {
         active = false;
         ufoCounter = 0;
         ufoPassesLeft = 0;
     }
 
+    /**
+     * Reduces the remaining duration of the ufo by 1.
+     * @return The updated duration.
+     */
     public int decrementCounter() {
         ufoCounter -= 1;
         return ufoCounter;

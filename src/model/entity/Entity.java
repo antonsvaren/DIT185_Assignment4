@@ -154,9 +154,6 @@ public abstract class Entity {
         this.angle = angle;
     }
 
-    public double getDeltaAngle() {
-        return deltaAngle;
-    }
 
     public void setDeltaAngle(double deltaAngle) {
         this.deltaAngle = deltaAngle;
@@ -196,9 +193,5 @@ public abstract class Entity {
 
     public Polygon getTransformedPolygon() {
         return transformedPolygon;
-    }
-
-    public void setTransformedPolygon(Polygon transformedPolygon) {
-        this.transformedPolygon = transformedPolygon;
     }
 }

@@ -2,28 +2,58 @@ package model.entity;
 
 public class Ship extends Entity{
 
-    // Ship's rotation and acceleration rates and maximum speed.
-
+    /**
+     * The max amount the ship can rotate per update.
+     */
     private final double angleStep;
-    private final double speedStep;
-
-    private final double maxSpeed;
-
-    private final int shipExplosionMaxCount;
 
     /**
-     * Timer counter for hyperspace.
+     * The acceleration of the ship when thrusters are on.
      */
-    private final int maxHyperCount;
+    private final double speedStep;
+
+    /**
+     * The max speed of the ship.
+     */
+    private final double maxSpeed;
+
+    /**
+     * The duration of the explosion when ship explodes.
+     */
+    private final int shipExplosionDuration;
+
+    /**
+     * The amount of time the ship spends in hyper space.
+     */
+    private final int hyperSpaceDuration;
+    /**
+     * The remaining amount of time the ship will spend in hyper space.
+     */
     private int hyperCounter;
 
+    /**
+     * The forward thruster of the ship.
+     */
     private final Entity fwdThruster;
 
+    /**
+     * The revers thruster of the ship.
+     */
     private final Entity revThruster;
 
+    /**
+     * The remaining amount of time the ship explosion will remain.
+     */
     private int shipExplosionCounter;
 
-    private int maxShipsLeft;
+    /**
+     * The amount of ships left when the game starts.
+     */
+    private final int initialShipsLeft;
+
+    /**
+     * The current number of ships remaining.
+     */
     private int shipsLeft;
 
 
@@ -31,9 +61,9 @@ public class Ship extends Entity{
     public Ship(double angleStep,
                 double speedStep,
                 double maxSpeed,
-                int maxHyperCount,
-                int shipExplosionMaxCount,
-                int maxShipsLeft,
+                int hyperSpaceDuration,
+                int shipExplosionDuration,
+                int initialShipsLeft,
                 Entity fwdThruster,
                 Entity revThruster) {
         super();
@@ -42,10 +72,10 @@ public class Ship extends Entity{
         this.maxSpeed = maxSpeed;
         this.fwdThruster = fwdThruster;
         this.revThruster = revThruster;
-        this.shipExplosionMaxCount = shipExplosionMaxCount;
-        this.maxShipsLeft = maxShipsLeft;
-        this.shipsLeft = maxShipsLeft;
-        this.maxHyperCount = maxHyperCount;
+        this.shipExplosionDuration = shipExplosionDuration;
+        this.initialShipsLeft = initialShipsLeft;
+        this.shipsLeft = initialShipsLeft;
+        this.hyperSpaceDuration = hyperSpaceDuration;
 
         shipExplosionCounter = 0;
         hyperCounter = 0;
@@ -59,7 +89,7 @@ public class Ship extends Entity{
     }
 
     /**
-     * Reset ship position and angle.
+     * Reset ship.
      */
     public void init() {
         active = true;
@@ -69,10 +99,17 @@ public class Ship extends Entity{
         y = 0.0;
         deltaX = 0.0;
         deltaY = 0.0;
-        updateThruster(fwdThruster);
-        updateThruster(revThruster);
+        updateThruster(getFwdThruster());
+        updateThruster(getRevThruster());
     }
 
+    /**
+     * Update the ship state with the player input.
+     * @param left Indicates if the player has pressed left.
+     * @param right Indicates if the player has pressed right.
+     * @param up Indicates if the player has pressed up.
+     * @param down Indicates if the player has pressed down.
+     */
     public void updateShip(boolean left, boolean right, boolean up, boolean down) {
 
         double dx, dy, speed;
@@ -107,9 +144,9 @@ public class Ship extends Entity{
 
         if (up || down) {
             speed = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
-            if (speed > maxSpeed) {
-                dx = maxSpeed * -Math.sin(angle);
-                dy = maxSpeed *  Math.cos(angle);
+            if (speed > getMaxSpeed()) {
+                dx = getMaxSpeed() * -Math.sin(angle);
+                dy = getMaxSpeed() *  Math.cos(angle);
                 if (up)
                     deltaX = dx;
                 else
@@ -120,20 +157,22 @@ public class Ship extends Entity{
                     deltaY = -dy;
             }
         }
-
-//        transform();
     }
 
     @Override
     public boolean transform() {
-        if (hyperCounter > 0) hyperCounter--;
+        if (getHyperCounter() > 0) setHyperCounter(getHyperCounter() - 1);
 
         boolean wrapped = super.transform();
-        updateThruster(fwdThruster);
-        updateThruster(revThruster);
+        updateThruster(getFwdThruster());
+        updateThruster(getRevThruster());
         return wrapped;
     }
 
+    /**
+     * Updates the thruster to follow the ships position and angle.
+     * @param thruster The thruster to update.
+     */
     private void updateThruster(Entity thruster) {
         if (thruster == null) return;
         thruster.x = x;
@@ -142,16 +181,19 @@ public class Ship extends Entity{
         thruster.transform();
     }
 
-    public void setShipExplosionCounter(int shipExplosionCounter) {
-        this.shipExplosionCounter = shipExplosionCounter;
-    }
-
+    /**
+     * Update the amount of time remaining in hyper space.
+     * @param hyperCounter The remaining time.
+     */
     public void setHyperCounter(int hyperCounter) {
         this.hyperCounter = hyperCounter;
     }
 
+    /**
+     * Sets the number of ships left to the initial value.
+     */
     public void resetShipsLeft() {
-        this.shipsLeft = maxShipsLeft;
+        shipsLeft = initialShipsLeft;
     }
     public Entity getFwdThruster() {
         return fwdThruster;
@@ -161,42 +203,44 @@ public class Ship extends Entity{
         return revThruster;
     }
 
+    /**
+     * Returns the amount of time remaining in hyper space.
+     * @return The remaining amount of time in hyperspace.
+     */
     public int getHyperCounter() {
         return hyperCounter;
     }
 
+    /**
+     * Reduces the duration of the ship explosion by 1.
+     * @return THe update duration of the ship explosion.
+     */
     public int decrementExplosionCounter() {
-        shipExplosionCounter -= 1;
-        return shipExplosionCounter;
+        return shipExplosionCounter--;
     }
 
     public int getShipsLeft() {
         return shipsLeft;
     }
 
-    public void incrementShipsLeft() {
-        shipsLeft++;
+    /**
+     * Increments the number of ships left by 1.
+     */
+    public int incrementShipsLeft() {
+        return shipsLeft++;
     }
 
-    @Override
-    public String toString() {
-        return "Ship{" +
-                "angleStep=" + angleStep +
-                ", speedStep=" + speedStep +
-                ", maxSpeed=" + maxSpeed +
-                ", shipCounterMaxDuration=" + shipExplosionMaxCount +
-                ", hyperCounter=" + hyperCounter +
-                ", fwdThruster=" + fwdThruster +
-                ", revThruster=" + revThruster +
-                ", shipCounter=" + shipExplosionCounter +
-                ", shipsLeft=" + shipsLeft +
-                '}';
-    }
-
+    /**
+     * Update the state of the ship in response to a collision.
+     */
     public void handleCollision() {
-        shipsLeft--;
-        shipExplosionCounter = shipExplosionMaxCount;
-        hyperCounter = maxHyperCount;
+        shipsLeft -= 1;
+        shipExplosionCounter = shipExplosionDuration;
+        hyperCounter = hyperSpaceDuration;
         active = false;
+    }
+
+    public double getMaxSpeed() {
+        return maxSpeed;
     }
 }

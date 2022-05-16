@@ -1,13 +1,10 @@
+import model.AsteroidsGameStateProvider;
 import model.entity.*;
 
 import java.applet.AudioClip;
 import java.awt.*;
-import java.awt.event.KeyEvent;
-import java.awt.event.KeyListener;
-import java.util.ArrayList;
-import java.util.List;
 
-public class AsteroidsView implements KeyListener {
+public class AsteroidsView {
 
     // Sound clips.
     private final AudioClip crashSound;
@@ -18,35 +15,16 @@ public class AsteroidsView implements KeyListener {
     private final AudioClip thrustersSound;
     private final AudioClip warpSound;
 
-    private boolean sound;
-
-    private boolean thrustersOn;
-    private boolean ufoPresent;
-    private boolean missilePresent;
-    private boolean newExplosion;
-    private boolean firing;
-    private boolean collision;
-    private boolean warping;
+    private boolean sound = true;
     private boolean missilePlaying;
     private boolean saucerPlaying;
     private boolean thrustersPlaying;
-
-    private Ship ship;
-    private Entity[] photons;
-    private Missile missile;
-    private Entity[] asteroids;
-    private Entity ufo;
-    private Explosion[] explosions;
-
-    private boolean up;
-    private boolean down;
-    private boolean left;
-    private boolean right;
-
-    private final List<UserInputObserver> userInputObservers;
+    private AsteroidsGameStateProvider asteroidsGameStateProvider;
+    private boolean up = false;
+    private boolean down = false;
     private int numStars;
-    private Point[] stars;
-    private boolean detail;
+    private final Point[] stars;
+    private boolean detailed = true;
     private String copyName;
     private String copyVers;
     private String copyInfo;
@@ -58,7 +36,8 @@ public class AsteroidsView implements KeyListener {
                          AudioClip missileSound,
                          AudioClip saucerSound,
                          AudioClip thrustersSound,
-                         AudioClip warpSound) {
+                         AudioClip warpSound,
+                         AsteroidsGameStateProvider asteroidsGameStateProvider) {
         this.crashSound = crashSound;
         this.explosionSound = explosionSound;
         this.fireSound = fireSound;
@@ -66,59 +45,73 @@ public class AsteroidsView implements KeyListener {
         this.saucerSound = saucerSound;
         this.thrustersSound = thrustersSound;
         this.warpSound = warpSound;
-        userInputObservers = new ArrayList<>();
-    }
+        this.setAsteroidsGameStateProvider(asteroidsGameStateProvider);
 
-    public void init(int width, int height) {
-        numStars = width * height / 5000;
+        setNumStars(Entity.getWidth() * Entity.getHeight() / 5000);
         stars = new Point[numStars];
         for (int i = 0; i < numStars; i++)
-            stars[i] = new Point((int) (Math.random() * Entity.getWidth()), (int) (Math.random() * Entity.getHeight()));
-
+            stars[i] = new Point((int) (Math.random() * Entity.getWidth()),
+                            (int) (Math.random() * Entity.getHeight()));
     }
 
+    /**
+     * Plays sounds based on current state of the game.
+     */
     public void playSounds() {
 
-        if (thrustersOn) {
+        if (asteroidsGameStateProvider.isThrustersOn()) {
             playShipSound();
         } else {
             stopShipSound();
         }
 
-        if (ufoPresent) {
+        if (asteroidsGameStateProvider.isUfoPresent()) {
             playSaucerSound();
         } else {
             stopSaucerSound();
         }
 
-        if (missilePresent) {
+        if (asteroidsGameStateProvider.isMissilePresent()) {
             playMissileSound();
         } else {
             stopMissileSound();
         }
 
-        if (!sound) return;
+        playExplosionSound();
+        playFiringSound();
+        playCollisionSound();
+        playWarpingSound();
+    }
 
-        if (newExplosion) {
-            explosionSound.play();
-        }
-        if (firing) {
-            fireSound.play();
-        }
-        if (collision) {
-            crashSound.play();
-        }
-        if (warping) {
-            warpSound.play();
+    private void playWarpingSound() {
+        if (asteroidsGameStateProvider.isWarping() && isSound()) {
+            getWarpSound().play();
         }
     }
 
+    private void playCollisionSound() {
+        if (asteroidsGameStateProvider.isCollision() && isSound()) {
+            getCrashSound().play();
+        }
+    }
+
+    private void playFiringSound() {
+        if (asteroidsGameStateProvider.isFiring() && isSound()) {
+            getFireSound().play();
+        }
+    }
+
+    private void playExplosionSound() {
+        if (asteroidsGameStateProvider.isNewExplosion() && isSound()) {
+            getExplosionSound().play();
+        }
+    }
 
     private void playMissileSound() {
-        if (missilePlaying) return;
+        if (missilePlaying || !isSound()) return;
 
         missilePlaying = true;
-        missileSound.loop();
+        getMissileSound().loop();
     }
 
     private void stopMissileSound() {
@@ -127,7 +120,7 @@ public class AsteroidsView implements KeyListener {
     }
 
     public void playSaucerSound() {
-        if (saucerPlaying) return;
+        if (saucerPlaying || !isSound()) return;
 
         saucerPlaying = true;
         saucerSound.loop();
@@ -144,159 +137,20 @@ public class AsteroidsView implements KeyListener {
     }
 
     public void playShipSound() {
-        if (sound && !thrustersPlaying) {
-            thrustersSound.loop();
-            thrustersPlaying = true;
-        }
+        if (!isSound() || thrustersPlaying) return;
+        thrustersSound.loop();
+        thrustersPlaying = true;
     }
 
-    public void keyPressed(KeyEvent e) {
-
-        userInputObservers.forEach(observer -> {
-            char c;
-
-            // Check if any cursor keys have been pressed and set flags.
-            if (e.getKeyCode() == KeyEvent.VK_LEFT) {
-                observer.left();
-                up = true;
-            }
-            if (e.getKeyCode() == KeyEvent.VK_RIGHT) {
-                observer.right();
-                right = true;
-            }
-
-            if (e.getKeyCode() == KeyEvent.VK_UP) {
-                observer.up();
-                up = true;
-            }
-            if (e.getKeyCode() == KeyEvent.VK_DOWN) {
-                observer.down();
-                down = true;
-            }
-
-            // Spacebar: fire a photon and start its counter.
-            if (e.getKeyChar() == ' ') {
-                observer.firePhoton();
-            }
-
-            // Allow upper or lower case characters for remaining keys.
-            c = Character.toLowerCase(e.getKeyChar());
-
-            // 'H' key: warp ship into hyperspace by moving to a random location and
-            // starting counter.
-            if (c == 'h' ) {
-                observer.warpShip();
-            }
-
-            // 'P' key: toggle pause mode and start or stop any active looping sound
-            // clips.
-
-            if (c == 'p') {
-//                if (paused) {
-//                    if (sound && missilePlaying)
-//                        missileSound.loop();
-//                    if (sound && saucerPlaying)
-//                        saucerSound.loop();
-//                    if (sound && thrustersPlaying)
-//                        thrustersSound.loop();
-//                }
-//                else {
-//                    if (missilePlaying)
-//                        missileSound.stop();
-//                    if (saucerPlaying)
-//                        saucerSound.stop();
-//                    if (thrustersPlaying)
-//                        thrustersSound.stop();
-//                }
-                observer.pause();
-            }
-
-            // 'M' key: toggle sound on or off and stop any looping sound clips.
-
-            if (c == 'm') {
-                if (sound) {
-                    crashSound.stop();
-                    explosionSound.stop();
-                    fireSound.stop();
-                    missileSound.stop();
-                    saucerSound.stop();
-                    thrustersSound.stop();
-                    warpSound.stop();
-                }
-                else {
-                    if (missilePlaying)
-                        missileSound.loop();
-                    if (saucerPlaying )
-                        saucerSound.loop();
-                    if (thrustersPlaying)
-                        thrustersSound.loop();
-                }
-                sound = !sound;
-            }
-
-            // 'D' key: toggle graphics detail on or off.
-
-            if (c == 'd') {
-                detail = !detail;
-                observer.toggleDetails();
-            }
-
-            // 'S' key: start the game, if not already in progress.
-
-            if (c == 's')
-                observer.toggleStart();
-
-            // 'HOME' key: jump to web site (undocumented).
-
-            if (e.getKeyCode() == KeyEvent.VK_HOME)
-                observer.home();
-        });
-
-    }
-
-    public void keyReleased(KeyEvent e) {
-
-        // Check if any cursor keys where released and set flags.
-
-        userInputObservers.forEach(observer -> {
-            if (e.getKeyCode() == KeyEvent.VK_LEFT) {
-                observer.releaseLeft();
-                left = false;
-            }
-            if (e.getKeyCode() == KeyEvent.VK_RIGHT) {
-                observer.releaseRight();
-                right = false;
-            }
-            if (e.getKeyCode() == KeyEvent.VK_UP) {
-                observer.releaseUp();
-                up = false;
-            }
-            if (e.getKeyCode() == KeyEvent.VK_DOWN) {
-                observer.releaseDown();
-                down = false;
-            }
-        });
-
-        if (thrustersPlaying) {
-            thrustersSound.stop();
-            thrustersPlaying = false;
-        }
-    }
-    public void keyTyped(KeyEvent e) {}
-
+    /**
+     * Draws the next frame.
+     */
     public void paint(Dimension d,
-                      Dimension offDimension,
                       Graphics offGraphics,
-                      Image offImage,
-                      int hyperCount,
-                      int maxScrap,
-                      int scrapCount,
                       Font font,
-                      int score,
                       int fontWidth,
                       int fontHeight,
                       boolean paused,
-                      int highScore,
                       FontMetrics fm,
                       boolean playing,
                       boolean loaded,
@@ -309,14 +163,25 @@ public class AsteroidsView implements KeyListener {
         int x, y;
 
         // Create the off screen graphics context, if no good one exists.
+        Entity[] photons = asteroidsGameStateProvider.getPhotons();
+        Entity[] asteroids = asteroidsGameStateProvider.getAsteroids();
+        Missile missile = asteroidsGameStateProvider.getMissile();
+        Ufo ufo = asteroidsGameStateProvider.getUfo();
+        Ship ship = asteroidsGameStateProvider.getShip();
+        Explosion[] explosions = asteroidsGameStateProvider.getExplosions();
 
+        int hyperCount = asteroidsGameStateProvider.getHyperCount();
+        int maxScrap = asteroidsGameStateProvider.getMaxScrap();
+        int scrapCount = asteroidsGameStateProvider.getScrapCount();
 
+        int score = asteroidsGameStateProvider.getScore();
+        int highScore = asteroidsGameStateProvider.getHighScore();
 
         // Fill in background and stars.
 
         offGraphics.setColor(Color.black);
         offGraphics.fillRect(0, 0, d.width, d.height);
-        if (detail) {
+        if (detailed) {
             offGraphics.setColor(Color.white);
             for (i = 0; i < numStars; i++)
                 offGraphics.drawLine(stars[i].x, stars[i].y, stars[i].x, stars[i].y);
@@ -345,7 +210,7 @@ public class AsteroidsView implements KeyListener {
 
         for (i = 0; i < asteroids.length; i++)
             if (asteroids[i].isActive()) {
-                if (detail) {
+                if (detailed) {
                     offGraphics.setColor(Color.black);
                     offGraphics.fillPolygon(asteroids[i].getTransformedPolygon());
                 }
@@ -356,10 +221,8 @@ public class AsteroidsView implements KeyListener {
             }
 
         // Draw the flying saucer.
-
-
         if (ufo.isActive()) {
-            if (detail) {
+            if (detailed) {
                 offGraphics.setColor(Color.black);
                 offGraphics.fillPolygon(ufo.getTransformedPolygon());
             }
@@ -375,7 +238,7 @@ public class AsteroidsView implements KeyListener {
 
         c = 255 - (255 / hyperCount) * ship.getHyperCounter();
         if (ship.isActive()) {
-            if (detail && ship.getHyperCounter() == 0) {
+            if (detailed && ship.getHyperCounter() == 0) {
                 offGraphics.setColor(Color.black);
                 offGraphics.fillPolygon(ship.getTransformedPolygon());
             }
@@ -389,7 +252,7 @@ public class AsteroidsView implements KeyListener {
             // Draw thruster exhaust if thrusters are on. Do it randomly to get a
             // flicker effect.
 
-            if (!paused && detail && Math.random() < 0.5) {
+            if (!paused && detailed && Math.random() < 0.5) {
                 if (up) {
                     offGraphics.drawPolygon(ship.getFwdThruster().getTransformedPolygon());
                     offGraphics.drawLine(
@@ -426,13 +289,14 @@ public class AsteroidsView implements KeyListener {
         offGraphics.drawString("Ships: " + ship.getShipsLeft(), fontWidth, d.height - fontHeight);
         s = "High: " + highScore;
         offGraphics.drawString(s, d.width - (fontWidth + fm.stringWidth(s)), fontHeight);
-        if (!sound) {
+        if (!isSound()) {
             s = "Mute";
             offGraphics.drawString(s, d.width - (fontWidth + fm.stringWidth(s)), d.height - fontHeight);
         }
 
         if (!playing) {
             s = copyName;
+
             offGraphics.drawString(s, (d.width - fm.stringWidth(s)) / 2, d.height / 2 - 2 * fontHeight);
             s = copyVers;
             offGraphics.drawString(s, (d.width - fm.stringWidth(s)) / 2, d.height / 2 - fontHeight);
@@ -466,9 +330,6 @@ public class AsteroidsView implements KeyListener {
             s = "Game Paused";
             offGraphics.drawString(s, (d.width - fm.stringWidth(s)) / 2, d.height / 4);
         }
-//
-//        // Copy the off screen buffer to the screen.
-//        g.drawImage(offImage, 0, 0, this);
     }
 
     public AudioClip getCrashSound() {
@@ -507,107 +368,78 @@ public class AsteroidsView implements KeyListener {
         this.sound = sound;
     }
 
-    public boolean isThrustersOn() {
-        return thrustersOn;
+    public void setCopyName(String copyName) {
+        this.copyName = copyName;
     }
 
-    public void setThrustersOn(boolean thrustersOn) {
-        this.thrustersOn = thrustersOn;
+    public void setCopyVers(String copyVers) {
+        this.copyVers = copyVers;
     }
 
-    public boolean isUfoPresent() {
-        return ufoPresent;
+    public void setCopyInfo(String copyInfo) {
+        this.copyInfo = copyInfo;
     }
 
-    public void setUfoPresent(boolean ufoPresent) {
-        this.ufoPresent = ufoPresent;
+    public void setCopyLink(String copyLink) {
+        this.copyLink = copyLink;
     }
 
-    public boolean isMissilePresent() {
-        return missilePresent;
+    public void unPause() {
+        if (isSound() && missilePlaying)
+            getMissileSound().loop();
+        if (isSound() && saucerPlaying)
+            getSaucerSound().loop();
+        if (isSound() && thrustersPlaying)
+            getThrustersSound().loop();
     }
 
-    public void setMissilePresent(boolean missilePresent) {
-        this.missilePresent = missilePresent;
+    public void pause() {
+        if (missilePlaying)
+            getMissileSound().stop();
+        if (saucerPlaying)
+            getSaucerSound().stop();
+        if (thrustersPlaying)
+            getThrustersSound().stop();
     }
 
-    public boolean isNewExplosion() {
-        return newExplosion;
+    public void soundOff() {
+        setSound(false);
+        getCrashSound().stop();
+        getExplosionSound().stop();
+        getFireSound().stop();
+        getMissileSound().stop();
+        getSaucerSound().stop();
+        getThrustersSound().stop();
+        getWarpSound().stop();
     }
 
-    public void setNewExplosion(boolean newExplosion) {
-        this.newExplosion = newExplosion;
+    public void soundOn(boolean paused) {
+        setSound(true);
+        if (missilePlaying && !paused)
+            getMissileSound().loop();
+        if (saucerPlaying && !paused)
+            getSaucerSound().loop();
+        if (thrustersPlaying && !paused)
+            getThrustersSound().loop();
     }
 
-    public boolean isFiring() {
-        return firing;
+    public void setUp(boolean up) {
+        this.up = up;
     }
 
-    public void setFiring(boolean firing) {
-        this.firing = firing;
+    public void setDown(boolean down) {
+        this.down = down;
     }
 
-    public boolean isCollision() {
-        return collision;
+    public void setDetailed(boolean detailed) {
+        this.detailed = detailed;
     }
 
-    public void setCollision(boolean collision) {
-        this.collision = collision;
+    public void setAsteroidsGameStateProvider(AsteroidsGameStateProvider asteroidsGameStateProvider) {
+        this.asteroidsGameStateProvider = asteroidsGameStateProvider;
     }
 
-    public boolean isWarping() {
-        return warping;
-    }
-
-    public void setWarping(boolean warping) {
-        this.warping = warping;
-    }
-
-    public boolean isMissilePlaying() {
-        return missilePlaying;
-    }
-
-    public void setMissilePlaying(boolean missilePlaying) {
-        this.missilePlaying = missilePlaying;
-    }
-
-    public boolean isSaucerPlaying() {
-        return saucerPlaying;
-    }
-
-    public void setSaucerPlaying(boolean saucerPlaying) {
-        this.saucerPlaying = saucerPlaying;
-    }
-
-    public boolean isThrustersPlaying() {
-        return thrustersPlaying;
-    }
-
-    public void setThrustersPlaying(boolean thrustersPlaying) {
-        this.thrustersPlaying = thrustersPlaying;
-    }
-
-    public void setShip(Ship ship) {
-        this.ship = ship;
-    }
-
-    public void setPhotons(Entity[] photons) {
-        this.photons = photons;
-    }
-
-    public void setMissile(Missile missile) {
-        this.missile = missile;
-    }
-
-    public void setAsteroids(Entity[] asteroids) {
-        this.asteroids = asteroids;
-    }
-
-    public void setUfo(Entity ufo) {
-        this.ufo = ufo;
-    }
-
-    public void setExplosions(Explosion[] explosions) {
-        this.explosions = explosions;
+    public void setNumStars(int numStars) {
+        this.numStars = numStars;
     }
 }

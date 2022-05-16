@@ -29,20 +29,24 @@ public class Asteroid extends Entity{
     }
 
     public static void incrementSpeed() {
-        speed += SPEED_DELTA;
+        setSpeed(getSpeed() + getSpeedDelta());
     }
 
     public static void setSpeed(double speed) {
         Asteroid.speed = speed;
     }
 
+    public static double getSpeedDelta() {
+        return SPEED_DELTA;
+    }
+
     @Override
     public void initBasePolygon() {
         basePolygon = new Polygon();
-        int s = minRockSides + (int) (Math.random() * (maxRockSides - minRockSides));
+        int s = getMinRockSides() + (int) (Math.random() * (getMaxRockSides() - getMinRockSides()));
         for (int i = 0; i < s; i ++) {
             double theta = 2 * Math.PI / s * i;
-            double r = minRockSize + (int) (Math.random() * (maxRockSize - minRockSize));
+            double r = getMinRockSize() + (int) (Math.random() * (getMaxRockSize() - getMinRockSize()));
             int x = (int) -Math.round(r * Math.sin(theta));
             int y = (int)  Math.round(r * Math.cos(theta));
             basePolygon.addPoint(x, y);
@@ -52,21 +56,21 @@ public class Asteroid extends Entity{
 
     public void initSmallAsteroid(double newX, double newY) {
         basePolygon = new Polygon();
-        int s = minRockSides + (int) (Math.random() * (maxRockSides - minRockSides));
+        int s = getMinRockSides() + (int) (Math.random() * (getMaxRockSides() - getMinRockSides()));
         for (int i = 0; i < s; i++) {
             double theta = 2 * Math.PI / s * i;
-            double r = (minRockSize + (int) (Math.random() * (maxRockSize - minRockSize))) / 2;
+            double r = (getMinRockSize() + (int) (Math.random() * (getMaxRockSize() - getMinRockSize()))) / 2;
             int x = (int) -Math.round(r * Math.sin(theta));
             int y = (int)  Math.round(r * Math.cos(theta));
             basePolygon.addPoint(x, y);
         }
         active = true;
         angle = 0.0;
-        deltaAngle = Math.random() * 2 * maxRockSpin - maxRockSpin;
+        deltaAngle = Math.random() * 2 * getMaxRockSpin() - getMaxRockSpin();
         x = newX;
         y = newY;
-        deltaX = Math.random() * 2 * speed - speed;
-        deltaY = Math.random() * 2 * speed - speed;
+        deltaX = Math.random() * 2 * getSpeed() - getSpeed();
+        deltaY = Math.random() * 2 * getSpeed() - getSpeed();
         transform();
         setIsSmall(true);
     }
@@ -78,7 +82,7 @@ public class Asteroid extends Entity{
         initBasePolygon();
         active = true;
         angle = 0.0;
-        deltaAngle = Math.random() * 2 * maxRockSpin - maxRockSpin;
+        deltaAngle = Math.random() * 2 * getMaxRockSpin() - getMaxRockSpin();
 
         // Place the asteroid at one edge of the screen.
 
@@ -97,22 +101,50 @@ public class Asteroid extends Entity{
 
         // Set a random motion for the asteroid.
 
-        deltaX = Math.random() * speed;
+        deltaX = Math.random() * getSpeed();
         if (Math.random() < 0.5)
             deltaX = -deltaX;
-        deltaY = Math.random() * speed;
+        deltaY = Math.random() * getSpeed();
         if (Math.random() < 0.5)
             deltaY = -deltaY;
 
-        isSmall = false;
+        setSmall(false);
         transform();
     }
 
     public void setIsSmall(boolean isSmall) {
-        this.isSmall = isSmall;
+        this.setSmall(isSmall);
     }
 
     public boolean getIsSmall() {
+        return isSmall();
+    }
+
+    public int getMinRockSides() {
+        return minRockSides;
+    }
+
+    public int getMaxRockSides() {
+        return maxRockSides;
+    }
+
+    public int getMinRockSize() {
+        return minRockSize;
+    }
+
+    public int getMaxRockSize() {
+        return maxRockSize;
+    }
+
+    public double getMaxRockSpin() {
+        return maxRockSpin;
+    }
+
+    public boolean isSmall() {
         return isSmall;
+    }
+
+    public void setSmall(boolean small) {
+        isSmall = small;
     }
 }
