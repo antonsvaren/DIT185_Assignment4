@@ -19,10 +19,10 @@ public class AsteroidsView {
     private boolean missilePlaying;
     private boolean saucerPlaying;
     private boolean thrustersPlaying;
-    private AsteroidsGameStateProvider asteroidsGameStateProvider;
+    private final AsteroidsGameStateProvider asteroidsGameStateProvider;
     private boolean up = false;
     private boolean down = false;
-    private int numStars;
+    private final int numStars;
     private final Point[] stars;
     private boolean detailed = true;
     private String copyName;
@@ -45,9 +45,9 @@ public class AsteroidsView {
         this.saucerSound = saucerSound;
         this.thrustersSound = thrustersSound;
         this.warpSound = warpSound;
-        this.setAsteroidsGameStateProvider(asteroidsGameStateProvider);
+        this.asteroidsGameStateProvider = asteroidsGameStateProvider;
 
-        setNumStars(Entity.getWidth() * Entity.getHeight() / 5000);
+        numStars = Entity.getWidth() * Entity.getHeight() / 5000;
         stars = new Point[numStars];
         for (int i = 0; i < numStars; i++)
             stars[i] = new Point((int) (Math.random() * Entity.getWidth()),
@@ -84,34 +84,34 @@ public class AsteroidsView {
     }
 
     private void playWarpingSound() {
-        if (asteroidsGameStateProvider.isWarping() && isSound()) {
-            getWarpSound().play();
+        if (asteroidsGameStateProvider.isWarping() && sound) {
+            warpSound.play();
         }
     }
 
     private void playCollisionSound() {
-        if (asteroidsGameStateProvider.isCollision() && isSound()) {
-            getCrashSound().play();
+        if (asteroidsGameStateProvider.isCollision() && sound) {
+            crashSound.play();
         }
     }
 
     private void playFiringSound() {
-        if (asteroidsGameStateProvider.isFiring() && isSound()) {
-            getFireSound().play();
+        if (asteroidsGameStateProvider.isFiring() && sound) {
+            fireSound.play();
         }
     }
 
     private void playExplosionSound() {
-        if (asteroidsGameStateProvider.isNewExplosion() && isSound()) {
-            getExplosionSound().play();
+        if (asteroidsGameStateProvider.isNewExplosion() && sound) {
+            explosionSound.play();
         }
     }
 
     private void playMissileSound() {
-        if (missilePlaying || !isSound()) return;
+        if (missilePlaying || !sound) return;
 
         missilePlaying = true;
-        getMissileSound().loop();
+        missileSound.loop();
     }
 
     private void stopMissileSound() {
@@ -120,7 +120,7 @@ public class AsteroidsView {
     }
 
     public void playSaucerSound() {
-        if (saucerPlaying || !isSound()) return;
+        if (saucerPlaying || !sound) return;
 
         saucerPlaying = true;
         saucerSound.loop();
@@ -137,7 +137,7 @@ public class AsteroidsView {
     }
 
     public void playShipSound() {
-        if (!isSound() || thrustersPlaying) return;
+        if (!sound || thrustersPlaying) return;
         thrustersSound.loop();
         thrustersPlaying = true;
     }
@@ -289,7 +289,7 @@ public class AsteroidsView {
         offGraphics.drawString("Ships: " + ship.getShipsLeft(), fontWidth, d.height - fontHeight);
         s = "High: " + highScore;
         offGraphics.drawString(s, d.width - (fontWidth + fm.stringWidth(s)), fontHeight);
-        if (!isSound()) {
+        if (!sound) {
             s = "Mute";
             offGraphics.drawString(s, d.width - (fontWidth + fm.stringWidth(s)), d.height - fontHeight);
         }
@@ -331,43 +331,6 @@ public class AsteroidsView {
             offGraphics.drawString(s, (d.width - fm.stringWidth(s)) / 2, d.height / 4);
         }
     }
-
-    public AudioClip getCrashSound() {
-        return crashSound;
-    }
-
-    public AudioClip getExplosionSound() {
-        return explosionSound;
-    }
-
-    public AudioClip getFireSound() {
-        return fireSound;
-    }
-
-    public AudioClip getMissileSound() {
-        return missileSound;
-    }
-
-    public AudioClip getSaucerSound() {
-        return saucerSound;
-    }
-
-    public AudioClip getThrustersSound() {
-        return thrustersSound;
-    }
-
-    public AudioClip getWarpSound() {
-        return warpSound;
-    }
-
-    public boolean isSound() {
-        return sound;
-    }
-
-    public void setSound(boolean sound) {
-        this.sound = sound;
-    }
-
     public void setCopyName(String copyName) {
         this.copyName = copyName;
     }
@@ -385,42 +348,42 @@ public class AsteroidsView {
     }
 
     public void unPause() {
-        if (isSound() && missilePlaying)
-            getMissileSound().loop();
-        if (isSound() && saucerPlaying)
-            getSaucerSound().loop();
-        if (isSound() && thrustersPlaying)
-            getThrustersSound().loop();
+        if (sound && missilePlaying)
+            missileSound.loop();
+        if (sound && saucerPlaying)
+            saucerSound.loop();
+        if (sound && thrustersPlaying)
+            thrustersSound.loop();
     }
 
     public void pause() {
         if (missilePlaying)
-            getMissileSound().stop();
+            missileSound.stop();
         if (saucerPlaying)
-            getSaucerSound().stop();
+            saucerSound.stop();
         if (thrustersPlaying)
-            getThrustersSound().stop();
+            thrustersSound.stop();
     }
 
     public void soundOff() {
-        setSound(false);
-        getCrashSound().stop();
-        getExplosionSound().stop();
-        getFireSound().stop();
-        getMissileSound().stop();
-        getSaucerSound().stop();
-        getThrustersSound().stop();
-        getWarpSound().stop();
+        sound = false;
+        crashSound.stop();
+        explosionSound.stop();
+        fireSound.stop();
+        missileSound.stop();
+        saucerSound.stop();
+        thrustersSound.stop();
+        warpSound.stop();
     }
 
     public void soundOn(boolean paused) {
-        setSound(true);
+        sound = true;
         if (missilePlaying && !paused)
-            getMissileSound().loop();
+            missileSound.loop();
         if (saucerPlaying && !paused)
-            getSaucerSound().loop();
+            saucerSound.loop();
         if (thrustersPlaying && !paused)
-            getThrustersSound().loop();
+            thrustersSound.loop();
     }
 
     public void setUp(boolean up) {
@@ -433,13 +396,5 @@ public class AsteroidsView {
 
     public void setDetailed(boolean detailed) {
         this.detailed = detailed;
-    }
-
-    public void setAsteroidsGameStateProvider(AsteroidsGameStateProvider asteroidsGameStateProvider) {
-        this.asteroidsGameStateProvider = asteroidsGameStateProvider;
-    }
-
-    public void setNumStars(int numStars) {
-        this.numStars = numStars;
     }
 }

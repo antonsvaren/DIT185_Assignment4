@@ -221,7 +221,7 @@ public class AsteroidsController extends Applet implements Runnable, KeyListener
     }
   }
 
-  public void initView() {
+  private void initView() {
     AudioClip crashSound;
     AudioClip explosionSound;
     AudioClip fireSound;

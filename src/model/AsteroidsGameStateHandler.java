@@ -43,8 +43,8 @@ public class AsteroidsGameStateHandler implements AsteroidsGameStateProvider {
 
     // Number of points the must be scored to earn a new ship or to cause the
     // flying saucer to appear.
-    static private final int NEW_SHIP_POINTS = 5000;
-    static private final int NEW_UFO_POINTS  = 2750;
+    private static final int NEW_SHIP_POINTS = 5000;
+    private static final int NEW_UFO_POINTS  = 2750;
 
     private Ship ship;
     private Ufo ufo;

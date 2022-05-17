@@ -35,10 +35,6 @@ public class Asteroid extends Entity{
     public static void setSpeed(double speed) {
         Asteroid.speed = speed;
     }
-//
-//    public static double getSpeedDelta() {
-//        return SPEED_DELTA;
-//    }
 
     @Override
     public void initBasePolygon() {
