@@ -4,7 +4,7 @@ import model.entity.*;
 
 import java.awt.*;
 
-public class AsteroidsGameStateHandler implements AsteroidsGameStateProvider {
+public class AsteroidsGameStateHandler implements GameStateProvider {
 
     /**
      * Milliseconds between screen and the resulting frame rate.

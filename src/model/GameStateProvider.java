@@ -2,7 +2,7 @@ package model;
 
 import model.entity.*;
 
-public interface AsteroidsGameStateProvider {
+public interface GameStateProvider {
     boolean isGameOver();
 
     boolean isThrustersOn();

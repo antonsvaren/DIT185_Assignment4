@@ -1,4 +1,4 @@
-import model.AsteroidsGameStateProvider;
+import model.GameStateProvider;
 import model.entity.*;
 
 import java.applet.AudioClip;
@@ -19,7 +19,7 @@ public class AsteroidsView {
     private boolean missilePlaying;
     private boolean saucerPlaying;
     private boolean thrustersPlaying;
-    private final AsteroidsGameStateProvider asteroidsGameStateProvider;
+    private final GameStateProvider gameStateProvider;
     private boolean up = false;
     private boolean down = false;
     private final int numStars;
@@ -37,7 +37,7 @@ public class AsteroidsView {
                          AudioClip saucerSound,
                          AudioClip thrustersSound,
                          AudioClip warpSound,
-                         AsteroidsGameStateProvider asteroidsGameStateProvider) {
+                         GameStateProvider gameStateProvider) {
         this.crashSound = crashSound;
         this.explosionSound = explosionSound;
         this.fireSound = fireSound;
@@ -45,7 +45,7 @@ public class AsteroidsView {
         this.saucerSound = saucerSound;
         this.thrustersSound = thrustersSound;
         this.warpSound = warpSound;
-        this.asteroidsGameStateProvider = asteroidsGameStateProvider;
+        this.gameStateProvider = gameStateProvider;
 
         numStars = Entity.getWidth() * Entity.getHeight() / 5000;
         stars = new Point[numStars];
@@ -59,19 +59,19 @@ public class AsteroidsView {
      */
     public void playSounds() {
 
-        if (asteroidsGameStateProvider.isThrustersOn()) {
+        if (gameStateProvider.isThrustersOn()) {
             playShipSound();
         } else {
             stopShipSound();
         }
 
-        if (asteroidsGameStateProvider.isUfoPresent()) {
+        if (gameStateProvider.isUfoPresent()) {
             playSaucerSound();
         } else {
             stopSaucerSound();
         }
 
-        if (asteroidsGameStateProvider.isMissilePresent()) {
+        if (gameStateProvider.isMissilePresent()) {
             playMissileSound();
         } else {
             stopMissileSound();
@@ -84,25 +84,25 @@ public class AsteroidsView {
     }
 
     private void playWarpingSound() {
-        if (asteroidsGameStateProvider.isWarping() && sound) {
+        if (gameStateProvider.isWarping() && sound) {
             warpSound.play();
         }
     }
 
     private void playCollisionSound() {
-        if (asteroidsGameStateProvider.isCollision() && sound) {
+        if (gameStateProvider.isCollision() && sound) {
             crashSound.play();
         }
     }
 
     private void playFiringSound() {
-        if (asteroidsGameStateProvider.isFiring() && sound) {
+        if (gameStateProvider.isFiring() && sound) {
             fireSound.play();
         }
     }
 
     private void playExplosionSound() {
-        if (asteroidsGameStateProvider.isNewExplosion() && sound) {
+        if (gameStateProvider.isNewExplosion() && sound) {
             explosionSound.play();
         }
     }
@@ -163,19 +163,19 @@ public class AsteroidsView {
         int x, y;
 
         // Create the off screen graphics context, if no good one exists.
-        Entity[] photons = asteroidsGameStateProvider.getPhotons();
-        Entity[] asteroids = asteroidsGameStateProvider.getAsteroids();
-        Missile missile = asteroidsGameStateProvider.getMissile();
-        Ufo ufo = asteroidsGameStateProvider.getUfo();
-        Ship ship = asteroidsGameStateProvider.getShip();
-        Explosion[] explosions = asteroidsGameStateProvider.getExplosions();
+        Entity[] photons = gameStateProvider.getPhotons();
+        Entity[] asteroids = gameStateProvider.getAsteroids();
+        Missile missile = gameStateProvider.getMissile();
+        Ufo ufo = gameStateProvider.getUfo();
+        Ship ship = gameStateProvider.getShip();
+        Explosion[] explosions = gameStateProvider.getExplosions();
 
-        int hyperCount = asteroidsGameStateProvider.getHyperCount();
-        int maxScrap = asteroidsGameStateProvider.getMaxScrap();
-        int scrapCount = asteroidsGameStateProvider.getScrapCount();
+        int hyperCount = gameStateProvider.getHyperCount();
+        int maxScrap = gameStateProvider.getMaxScrap();
+        int scrapCount = gameStateProvider.getScrapCount();
 
-        int score = asteroidsGameStateProvider.getScore();
-        int highScore = asteroidsGameStateProvider.getHighScore();
+        int score = gameStateProvider.getScore();
+        int highScore = gameStateProvider.getHighScore();
 
         // Fill in background and stars.
 
